@@ -7,7 +7,7 @@ public class Taller6 {
         int[] respuesta = new int[denominaciones.length];
         boolean esNull = false;
 
-        //Algoritmo voraz para encontrar la vuelta minima en monedas
+
         for (int i = 0; i < denominaciones.length; i ++) {
             int temp = 0;
             temp = n / denominaciones[i];
@@ -15,7 +15,7 @@ public class Taller6 {
             respuesta[i] = temp;
         }
 
-        //Cambio no-exacto
+
         if (n != 0) {
             respuesta = null;
         }
