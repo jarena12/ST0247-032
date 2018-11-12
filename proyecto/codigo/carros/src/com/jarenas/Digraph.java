@@ -1,4 +1,4 @@
-package com.jarena;
+package com.jarenas;
 
 import java.util.ArrayList;
 
@@ -7,7 +7,8 @@ import java.util.ArrayList;
  *
  * @author Mauricio Toro, Mateo Agudelo
  */
-public abstract class Digraph {
+public abstract class Digraph
+{
 	protected int size;
 	protected double speed;
 	public Digraph(int vertices) {

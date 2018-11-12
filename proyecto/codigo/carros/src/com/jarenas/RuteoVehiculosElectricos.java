@@ -1,4 +1,4 @@
-package com.jarena;
+package com.jarenas;
 
 /**
  *
@@ -10,7 +10,10 @@ import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
-
+/**
+ * Clase Ruteo de vehiculos
+ * @author Juan Camilo Arenas F
+ */
 public class RuteoVehiculosElectricos {
 
     private int n, m, u, breaks;
@@ -18,11 +21,15 @@ public class RuteoVehiculosElectricos {
     private Digraph mapa;
     private short tipoEstacion[];
     private float pendienteFuncionCarga[];
+    private boolean visitados[];
     private String filename;
     private Pair<Float, Float>[] coordenadas;
     private ArrayList<ArrayList<Pair<Integer, Float>>> rutas;
-    private long tiempoSolucion;
 
+    /**
+     * Constructor
+     * @param filename
+     */
     public RuteoVehiculosElectricos(String filename)
     {
         this.filename = filename;
@@ -101,6 +108,7 @@ public class RuteoVehiculosElectricos {
             }
             
             // Leer respuesta
+
             try {
                 rutas = new ArrayList();
                 lector = new BufferedReader(new FileReader("../DataSets/respuesta-" + filename));
@@ -125,22 +133,26 @@ public class RuteoVehiculosElectricos {
             }
             catch(Exception ex)
             {
-                System.out.println("No se pudo leer respuesta");
+                //System.out.println("No se pudo leer respuesta");
             }
-                
-            
         } catch (Exception ex) {
             System.out.println(ex);
         }
     }
 
-    @Override
-    public String toString() {
+    /**
+     *
+     * @param tiempoSolucion
+     * @return String con datos de entrada y tiempo de solucion
+     */
+    //@Override
+    public String toString(long tiempoSolucion) {
         return "RuteoVehiculosElectricos{" + "r=" + r + ", speed=" + speed + ", Tmax=" + Tmax + ", Smax=" + Smax + ", st_customer=" + st_customer + ", Q=" + Q + ", tiempoSolucion=" + tiempoSolucion + '}';
     }
 
-    /*
-        Valida entrada
+    /**
+     *  Validar datos
+     * @return
      */
     public boolean validar(){
         
@@ -155,14 +167,13 @@ public class RuteoVehiculosElectricos {
                 if (tipoEstacion[parejaJ.first] >= 0)
                     carga = carga + pendienteFuncionCarga[tipoEstacion[parejaJ.first]] * parejaJ.second;
 
-                tiempo += parejaJ.second;            
+                tiempo += parejaJ.second;
             }
             if (tiempo > Tmax) {
                 System.out.println("La ruta " + i + " supera el Tmax");
                 return false;
             }
             ++i;
-            //System.out.println(i + " " + carga);
             if (carga < 0) {
                 System.out.println("La ruta " + i + " no respeta la restricción de carga");
                 return false;
@@ -172,7 +183,12 @@ public class RuteoVehiculosElectricos {
         return true;
     }
 
-    //Imprime solucion.
+
+    /**
+     * Imprime solucion
+     * @param distancias
+     * @param n
+     */
     private void imprimirSolucion(double distancias[], int n)
     {
         //TODO: Aqui debe imprimir el resultado final
@@ -180,8 +196,14 @@ public class RuteoVehiculosElectricos {
             System.out.println("Distancias: "+(distancias[i]));
     }
 
-    //Distancia minima entre nodos
-    private int minimaDistancia(double distancias[], Boolean procesados[])
+    /**
+     * Calcula minima distancia entre nodos
+     *
+     * @author Juan Camilo Arenas R
+     * @param distancias Arreglo con distancias
+     * @param procesados Arreglo con nodos procesados
+     */
+    public int minimaDistancia(double distancias[], Boolean procesados[])
     {
         double min=Integer.MAX_VALUE;
         int min_index=-1;
@@ -192,51 +214,102 @@ public class RuteoVehiculosElectricos {
             }
         return min_index;
     }
-    //Algoritmo ruta optima y se llama desde main
+
+    /**
+     * Procesa
+     */
     public void procesar()
     {
-        //Tiempo inicial. Para medir cuanto tiempo gasta
 
-        long startTime = System.currentTimeMillis();
-        float tiempo=0;
+        visitados = new boolean[n];
 
-        double distancias[]=new double[mapa.size()];
-        Boolean procesados[]=new Boolean[mapa.size()];
-
-        for (int i=0; i<mapa.size(); i++){
-            distancias[i]=Integer.MAX_VALUE;
-            procesados[i]=false;
-        }
-
-        distancias[0]=0;
-
-        //Recorre grafo marcando los procesados y evaluando la minima distancia entre nodos
-        for (int count=0; count<mapa.size(); count++)
+        double tiempo=0,tiempoRuta=0;
+        int clientes=0;
+        int rutas=1;
+        double carga = Q;
+        int currentNode = 0;
+        int nextNode=0;
+        visitados[0]=true;
+        while(clientesPendientes() > 0)
         {
-            int u=minimaDistancia(distancias, procesados);
+            nextNode = nodoMasCercano(currentNode);
 
-            procesados[u]=true;
+            visitados[nextNode] = true;
 
-            for (int v=0; v<mapa.size(); v++) {
-                if (!procesados[v] &&
-                        mapa.getWeight(u, v) != 0 &&
-                        distancias[u] != Integer.MAX_VALUE &&
-                        distancias[u] + mapa.getWeight(u, v) < distancias[v]) {
-                    //distancias[v] = distancias[u] + (mapa.getWeight(u, v)/speed);
+            double distancia = mapa.getWeight(currentNode,nextNode);
+            tiempo += (distancia/speed);
+            tiempoRuta += (distancia/speed);
+            carga = carga - (distancia * r);
 
-                    if (tipoEstacion[v] >= 0) {
-                        tiempo = tiempo + pendienteFuncionCarga[tipoEstacion[v]];
-                        //System.out.println(pendienteFuncionCarga[tipoEstacion[v]]);
+            currentNode=nextNode;
+
+            if(tipoEstacion[currentNode] >= 0){ // Es estacion de carga
+                double tiempoCargando = (Q - carga) / pendienteFuncionCarga[tipoEstacion[currentNode]];
+                carga=Q;
+                tiempo = tiempo + tiempoCargando;
+                tiempoRuta = tiempoRuta + tiempoCargando;
+            }else{
+                if(currentNode != 0){ // Si no esta en deposito
+                    clientes++;
+                    tiempo = tiempo + st_customer;
+                    tiempoRuta = tiempoRuta + st_customer;
+                    if(tiempoRuta >= Tmax){
+                        carga = Q;
+                        currentNode = 0;
+                        rutas++;
+                        tiempoRuta=0;
                     }
-                    distancias[v] = (mapa.getWeight(u, v) / speed);
                 }
+            }
+
+            if(carga - (mapa.getWeight(currentNode,0) * r) < 0){
+                carga = Q;
+                currentNode = 0;
+                rutas++;
+                tiempoRuta=0;
             }
         }
 
-        long stopTime = System.currentTimeMillis();
-        tiempoSolucion = stopTime - startTime;
+        System.out.println("Clientes visitados:"+ clientes + " Rutas: "+ rutas + " Tiempo:" + tiempo);
 
-        imprimirSolucion(distancias, mapa.size());
+        System.out.println(" ");
 
     }
+
+    /**
+     * Retorna numero de clintes pendientes
+     * @return pendientes
+     */
+    public int clientesPendientes()
+    {
+        int pendientes=0;
+        for(int i=1;i<n;i++){
+            if(!visitados[i] && tipoEstacion[i] >= 0){
+                pendientes++;
+            }
+        }
+
+        return pendientes;
+    }
+
+    /**
+     * Encuentra nodo mas cercano desde un nodo
+     * @param nodeNum
+     * @return Nodo mas cercano
+     */
+
+    public int nodoMasCercano(int nodeNum)
+    {
+        double distancia=Integer.MAX_VALUE;
+        int nodo=0;
+        for(int i=0;i<mapa.size;i++){
+            if(mapa.getWeight(nodeNum,i) < distancia && !visitados[i]){
+                distancia=mapa.getWeight(nodeNum,i);
+                nodo=i;
+            }
+        }
+        return nodo;
+    }
+
+
 }
