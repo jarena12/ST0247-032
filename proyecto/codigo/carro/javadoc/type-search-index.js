@@ -1,0 +1,1 @@
+typeSearchIndex = [{"p":"com.jarena","l":"Digraph"},{"p":"com.jarena","l":"DigraphAM"},{"p":"com.jarena","l":"Main"},{"p":"com.jarena","l":"Nodo"},{"p":"com.jarena","l":"Pair"},{"p":"com.jarena","l":"RuteoVehiculosElectricos"}]
